@@ -39,12 +39,10 @@ let buildAndTrainTheModel dataSetLocation modelPath =
     let trainingDataView = mlContext.Data.LoadFromTextFile(dataSetLocation,
                             columns = 
                                 [|
-                                    TextLoader.Column("Index" , DataKind.String, 0)
-                                    TextLoader.Column("Song" , DataKind.String, 1)
-                                    TextLoader.Column("Year" , DataKind.String, 2)
-                                    TextLoader.Column("Artist" , DataKind.String, 3)
-                                    TextLoader.Column("Genre", DataKind.String, 4)
-                                    TextLoader.Column("Lyrics", DataKind.String, 5)
+                                    TextLoader.Column("Song" , DataKind.String, 0)
+                                    TextLoader.Column("Artist" , DataKind.String, 1)
+                                    TextLoader.Column("Genre", DataKind.String, 2)
+                                    TextLoader.Column("Lyrics", DataKind.String, 3)
                                 |], 
                             separatorChar = '\t')
     
@@ -54,11 +52,12 @@ let buildAndTrainTheModel dataSetLocation modelPath =
             .Append(mlContext.Transforms.Conversion.MapValueToKey("Label", "Genre"))
             .Append(mlContext.Transforms.Text.FeaturizeText("SongFeaturized", "Song"))
             .Append(mlContext.Transforms.Text.FeaturizeText("ArtistFeaturized", "Artist"))
-            .Append(mlContext.Transforms.Concatenate("Features", "SongFeaturized","ArtistFeaturized"))
+            .Append(mlContext.Transforms.Text.FeaturizeText("LyricsFeaturized", "Lyrics"))
+            .Append(mlContext.Transforms.Concatenate("Features", "SongFeaturized", "ArtistFeaturized", "LyricsFeaturized"))
             .AppendCacheCheckpoint(mlContext)
         |> downcastPipeline
         
-    Common.ConsoleHelper.peekDataViewInConsole<LyricsInput> mlContext trainingDataView dataProcessPipeline 2 |> ignore
+    //Common.ConsoleHelper.peekDataViewInConsole<LyricsInput> mlContext trainingDataView dataProcessPipeline 2 |> ignore
 
     // STEP 3: Create the selected training algorithm/trainer
     let trainer =
@@ -133,11 +132,23 @@ let main _argv =
     let appPath = Path.GetDirectoryName(Environment.GetCommandLineArgs().[0])
     let dataDirectoryPath = Path.Combine(appPath,"../../../","Data")
     let dataModelPath = Path.Combine(appPath,"../../../","Data", "Model")
-    let trainDataPath  = Path.Combine(appPath,"../../../","Data","lyrics-shorter.csv")
+    let trainDataPath  = Path.Combine(appPath,"../../../","Data","lyrics-shorter.tsv")
 
 
     buildAndTrainTheModel trainDataPath dataModelPath
     
+//    let wr = new System.IO.StreamWriter("./Data/lyrics-shorter.tsv")
+//    let msft = CsvFile.Load(File.Open(trainDataPath, FileMode.Open), separators = ",", quote = '"', hasHeaders= true)
+//
+//    // Print the prices in the HLOC format
+//   
+//      
+//    msft.Rows
+//       |> Seq.filter (fun row -> not(row.GetColumn "lyrics" |> String.IsNullOrEmpty))
+//       |> Seq.take(1000)
+//       |> Seq.map (fun row -> (row.GetColumn "song")+ "    " + (row.GetColumn "artist") + "    " + (row.GetColumn "genre") + "    " + (row.GetColumn "lyrics").Replace(Environment.NewLine, ","))
+//       |> Seq.iter (fun row -> wr.WriteLine(row))
+//       |> Console.WriteLine
     Console.ReadLine() |> ignore
     0
     
