@@ -8,11 +8,13 @@ open FSharp.Data
 [<CLIMutable>]
 type LyricsInput = 
     {
-        Index : int
+        [<LoadColumn(0)>]
         Song : string
-        Year : string
+        [<LoadColumn(1)>]
         Artist : string
+        [<LoadColumn(2)>]
         Genre : string
+        [<LoadColumn(3)>]
         Lyrics : string
     }
 
@@ -36,15 +38,7 @@ let buildAndTrainTheModel dataSetLocation modelPath =
     let mlContext = MLContext(seed = Nullable 0)
 
     // STEP 1: Common data loading configuration
-    let trainingDataView = mlContext.Data.LoadFromTextFile(dataSetLocation,
-                            columns = 
-                                [|
-                                    TextLoader.Column("Song" , DataKind.String, 0)
-                                    TextLoader.Column("Artist" , DataKind.String, 1)
-                                    TextLoader.Column("Genre", DataKind.String, 2)
-                                    TextLoader.Column("Lyrics", DataKind.String, 3)
-                                |], 
-                            separatorChar = '\t')
+    let trainingDataView = mlContext.Data.LoadFromTextFile<LyricsInput>(dataSetLocation, separatorChar = '\t')
     
     
     let dataProcessPipeline = 
@@ -106,8 +100,6 @@ let buildAndTrainTheModel dataSetLocation modelPath =
     let trainedModel = modelBuilder.Fit(trainingDataView)
     
     let dataSample = { 
-       Index = 1
-       Year = ""
        Genre = ""
        Artist = ""
        Lyrics = ""
